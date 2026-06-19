@@ -2,6 +2,10 @@
 
 const { query } = require('../shared/db');
 const { jsonResponse } = require('../shared/http');
+const { initTelemetry, trackEvent } = require('../shared/telemetry');
+
+// 関数モジュールの先頭で Application Insights を初期化する。
+initTelemetry();
 
 // POST /api/messages
 // ボディ: { match_id, name, body }
@@ -41,6 +45,12 @@ async function postMessages(request, context) {
       'INSERT INTO messages (match_id, name, body) VALUES ($1, $2, $3) RETURNING id, match_id, name, body, created_at',
       [match_id, name.trim(), body.trim()]
     );
+
+    // 成功時にカスタムイベントを記録する。
+    trackEvent('MessagePosted', {
+      id: String(result.rows[0].id),
+      match_id: String(result.rows[0].match_id),
+    });
 
     return jsonResponse(201, result.rows[0]);
   } catch (err) {

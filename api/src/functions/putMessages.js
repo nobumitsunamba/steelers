@@ -3,6 +3,10 @@
 const { query } = require('../shared/db');
 const { jsonResponse } = require('../shared/http');
 const { isAdmin } = require('../shared/auth');
+const { initTelemetry } = require('../shared/telemetry');
+
+// 関数モジュールの先頭で Application Insights を初期化する。
+initTelemetry();
 
 // PUT /api/messages/{id}
 // リクエストボディ: { body }

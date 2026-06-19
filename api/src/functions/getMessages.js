@@ -2,6 +2,10 @@
 
 const { query } = require('../shared/db');
 const { jsonResponse } = require('../shared/http');
+const { initTelemetry } = require('../shared/telemetry');
+
+// 関数モジュールの先頭で Application Insights を初期化する。
+initTelemetry();
 
 // GET /api/messages?match_id=...
 // messagesテーブルから取得（新しい順）。match_id 指定時は絞り込み。
