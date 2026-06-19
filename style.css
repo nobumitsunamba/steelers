@@ -86,11 +86,61 @@ a {
   color: #b9bcc2;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
 .nav {
   display: flex;
   gap: 22px;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* 認証エリア（右上） */
+.auth-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.auth-user {
+  font-size: 13px;
+  color: #e7e8ea;
+  font-weight: 600;
+}
+
+.auth-role {
+  color: var(--steeler-red);
+  font-weight: 700;
+}
+
+.auth-btn {
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 6px 14px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.auth-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.auth-btn-primary {
+  background: var(--steeler-red);
+  border-color: var(--steeler-red);
+}
+
+.auth-btn-primary:hover {
+  background: var(--steeler-red-dark);
+  border-color: var(--steeler-red-dark);
 }
 
 .nav a {
@@ -536,6 +586,77 @@ a {
   color: var(--steeler-gray);
   font-size: 14px;
   padding: 8px 0;
+}
+
+/* 管理者用の編集・削除 */
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.msg-btn {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--steeler-gray);
+  transition: all 0.15s;
+}
+
+.msg-btn:hover:not(:disabled) {
+  border-color: var(--steeler-red);
+  color: var(--steeler-red);
+}
+
+.msg-delete:hover:not(:disabled) {
+  border-color: var(--steeler-red);
+  background: var(--steeler-red);
+  color: #fff;
+}
+
+.msg-save {
+  background: var(--steeler-red);
+  border-color: var(--steeler-red);
+  color: #fff;
+}
+
+.msg-save:hover:not(:disabled) {
+  background: var(--steeler-red-dark);
+  color: #fff;
+}
+
+.msg-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-area {
+  width: 100%;
+  border: 1px solid var(--steeler-red);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin: 6px 0;
+}
+
+.edit-area:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+}
+
+@media (max-width: 600px) {
+  .header-right {
+    gap: 12px;
+  }
+  .auth-user {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {
