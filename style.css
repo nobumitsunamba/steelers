@@ -361,6 +361,189 @@ a {
   font-size: 15px;
 }
 
+/* ---------- Board (応援メッセージ) ---------- */
+.board-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.board-form {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-row label {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.req {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--steeler-red);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+.board-form select,
+.board-form input,
+.board-form textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--steeler-black);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.board-form select:focus,
+.board-form input:focus,
+.board-form textarea:focus {
+  outline: none;
+  border-color: var(--steeler-red);
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+}
+
+.board-form textarea {
+  resize: vertical;
+}
+
+.char-count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--steeler-gray);
+  margin-top: 4px;
+}
+
+.form-feedback {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  min-height: 1em;
+}
+
+.form-feedback.error {
+  color: var(--steeler-red);
+}
+
+.form-feedback.success {
+  color: var(--win);
+}
+
+.submit-btn {
+  width: 100%;
+  background: var(--steeler-red);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--steeler-red-dark);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.board-messages-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.board-messages-title span {
+  color: var(--steeler-gray);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.message-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--steeler-red);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.message-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.message-name {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.message-date {
+  font-size: 12px;
+  color: var(--steeler-gray);
+  white-space: nowrap;
+}
+
+.message-body {
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-match {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--steeler-gray);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.message-empty {
+  color: var(--steeler-gray);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+@media (max-width: 760px) {
+  .board-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Footer ---------- */
 .site-footer {
   background: var(--steeler-black);

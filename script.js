@@ -213,9 +213,187 @@ function setupFilters() {
   });
 }
 
+// ------------------------------------------------------------------
+// 応援メッセージ掲示板
+// ------------------------------------------------------------------
+
+// ドロップダウン用に全試合を結合し、安定した match_id を付与する。
+// 日付はシーズン内で一意なので、これを識別子として利用する。
+const allMatches = [...leagueMatches, ...playoffMatches].map((m) => ({
+  matchId: m.date, // 例: "2025.12.13"
+  label: `${m.date} ${m.round} vs ${m.opponent}`,
+}));
+
+// 投稿日時を読みやすい日本語表記に整形する。
+function formatDateTime(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n) => `${n}`.padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+// HTMLエスケープ（XSS対策）。
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// 試合のラベルを matchId から引く（一覧表示用）。
+function matchLabelFor(matchId) {
+  const found = allMatches.find((m) => m.matchId === matchId);
+  return found ? found.label : matchId;
+}
+
+function populateMatchSelect() {
+  const select = document.getElementById("form-match");
+  if (!select) return;
+  select.innerHTML = allMatches
+    .map((m) => `<option value="${escapeHtml(m.matchId)}">${escapeHtml(m.label)}</option>`)
+    .join("");
+}
+
+function renderMessages(messages) {
+  const list = document.getElementById("message-list");
+  const count = document.getElementById("message-count");
+  if (!list) return;
+
+  if (count) count.textContent = messages.length ? `(${messages.length})` : "";
+
+  if (!messages.length) {
+    list.innerHTML = '<p class="message-empty">まだメッセージはありません。最初の応援を投稿しよう！</p>';
+    return;
+  }
+
+  list.innerHTML = messages
+    .map(
+      (m) => `
+      <article class="message-card">
+        <div class="message-head">
+          <span class="message-name">${escapeHtml(m.name)}</span>
+          <span class="message-date">${escapeHtml(formatDateTime(m.created_at))}</span>
+        </div>
+        <p class="message-body">${escapeHtml(m.body)}</p>
+        <span class="message-match">${escapeHtml(matchLabelFor(m.match_id))}</span>
+      </article>`
+    )
+    .join("");
+}
+
+async function loadMessages() {
+  const status = document.getElementById("message-status");
+  try {
+    const res = await fetch("/api/messages");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderMessages(Array.isArray(data) ? data : []);
+  } catch (err) {
+    if (status) {
+      status.textContent = "メッセージの読み込みに失敗しました。時間をおいて再度お試しください。";
+    }
+  }
+}
+
+function setFeedback(message, type) {
+  const el = document.getElementById("form-feedback");
+  if (!el) return;
+  el.textContent = message || "";
+  el.className = "form-feedback" + (type ? ` ${type}` : "");
+}
+
+function setupMessageForm() {
+  const form = document.getElementById("message-form");
+  if (!form) return;
+
+  const submitBtn = document.getElementById("submit-btn");
+  const bodyInput = document.getElementById("form-body");
+  const charCount = document.getElementById("char-count");
+
+  // 文字数カウンター
+  if (bodyInput && charCount) {
+    const updateCount = () => {
+      charCount.textContent = `${bodyInput.value.length} / 200`;
+    };
+    bodyInput.addEventListener("input", updateCount);
+    updateCount();
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setFeedback("");
+
+    const matchId = document.getElementById("form-match").value;
+    const name = document.getElementById("form-name").value.trim();
+    const body = bodyInput.value.trim();
+
+    // クライアント側バリデーション
+    if (!matchId) {
+      setFeedback("試合を選択してください。", "error");
+      return;
+    }
+    if (!name) {
+      setFeedback("お名前を入力してください。", "error");
+      return;
+    }
+    if (!body) {
+      setFeedback("メッセージを入力してください。", "error");
+      return;
+    }
+    if (body.length > 200) {
+      setFeedback("メッセージは200文字以内で入力してください。", "error");
+      return;
+    }
+
+    // 送信中はボタンを無効化
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = "送信中...";
+
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ match_id: matchId, name, body }),
+      });
+
+      if (!res.ok) {
+        let detail = "";
+        try {
+          const errData = await res.json();
+          detail = errData.error || (errData.details && errData.details.join("、")) || "";
+        } catch (_) {
+          /* JSONでない場合は無視 */
+        }
+        throw new Error(detail || `送信に失敗しました（HTTP ${res.status}）`);
+      }
+
+      // 成功：フォームをリセットしてリスト更新
+      form.reset();
+      if (charCount) charCount.textContent = "0 / 200";
+      setFeedback("メッセージを投稿しました！", "success");
+      await loadMessages();
+    } catch (err) {
+      setFeedback(err.message || "送信に失敗しました。時間をおいて再度お試しください。", "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderStats();
   renderMatches("match-list", leagueMatches);
   renderMatches("playoff-list", playoffMatches);
   setupFilters();
+
+  // 掲示板
+  populateMatchSelect();
+  setupMessageForm();
+  loadMessages();
 });
