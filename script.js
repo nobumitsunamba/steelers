@@ -250,6 +250,55 @@ function matchLabelFor(matchId) {
   return found ? found.label : matchId;
 }
 
+// ------------------------------------------------------------------
+// 認証・認可（Azure Static Web Apps の組み込み認証）
+// ------------------------------------------------------------------
+
+let currentUser = null; // /.auth/me の clientPrincipal
+let isAdminUser = false;
+
+// /.auth/me を呼び出してログイン状態とロールを取得する。
+async function loadAuth() {
+  try {
+    const res = await fetch("/.auth/me");
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.clientPrincipal || null;
+    } else {
+      currentUser = null;
+    }
+  } catch (err) {
+    currentUser = null;
+  }
+  isAdminUser = !!(
+    currentUser &&
+    Array.isArray(currentUser.userRoles) &&
+    currentUser.userRoles.includes("admin")
+  );
+  renderAuth();
+}
+
+// 画面右上のログイン/ログアウト表示を描画する。
+function renderAuth() {
+  const el = document.getElementById("auth-area");
+  if (!el) return;
+
+  if (currentUser) {
+    // 組み込みロール（anonymous / authenticated）以外を表示用に抽出
+    const roles = (currentUser.userRoles || []).filter(
+      (r) => r !== "anonymous" && r !== "authenticated"
+    );
+    const roleText = roles.length ? `（${roles.join(", ")}）` : "";
+    el.innerHTML = `
+      <span class="auth-user">${escapeHtml(currentUser.userDetails || "ユーザー")}<span class="auth-role">${escapeHtml(
+      roleText
+    )}</span></span>
+      <a class="auth-btn" href="/.auth/logout">ログアウト</a>`;
+  } else {
+    el.innerHTML = `<a class="auth-btn auth-btn-primary" href="/.auth/login/aad">管理者ログイン</a>`;
+  }
+}
+
 function populateMatchSelect() {
   const select = document.getElementById("form-match");
   if (!select) return;
@@ -273,13 +322,25 @@ function renderMessages(messages) {
   list.innerHTML = messages
     .map(
       (m) => `
-      <article class="message-card">
+      <article class="message-card" data-id="${escapeHtml(String(m.id))}">
         <div class="message-head">
           <span class="message-name">${escapeHtml(m.name)}</span>
           <span class="message-date">${escapeHtml(formatDateTime(m.created_at))}</span>
         </div>
         <p class="message-body">${escapeHtml(m.body)}</p>
         <span class="message-match">${escapeHtml(matchLabelFor(m.match_id))}</span>
+        ${
+          isAdminUser
+            ? `<div class="message-actions">
+                 <button type="button" class="msg-btn msg-edit" data-id="${escapeHtml(
+                   String(m.id)
+                 )}">編集</button>
+                 <button type="button" class="msg-btn msg-delete" data-id="${escapeHtml(
+                   String(m.id)
+                 )}">削除</button>
+               </div>`
+            : ""
+        }
       </article>`
     )
     .join("");
@@ -386,14 +447,110 @@ function setupMessageForm() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+// 管理者向けの編集・削除操作（イベント委譲で一度だけ設定）。
+function setupAdminActions() {
+  const list = document.getElementById("message-list");
+  if (!list) return;
+
+  list.addEventListener("click", async (e) => {
+    const delBtn = e.target.closest(".msg-delete");
+    const editBtn = e.target.closest(".msg-edit");
+    const saveBtn = e.target.closest(".msg-save");
+    const cancelBtn = e.target.closest(".msg-cancel");
+
+    // --- 削除 ---
+    if (delBtn) {
+      const id = delBtn.dataset.id;
+      if (!window.confirm("このメッセージを削除しますか？")) return;
+      delBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/messages/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadMessages();
+      } catch (err) {
+        window.alert("削除に失敗しました。権限を確認してください。");
+        delBtn.disabled = false;
+      }
+      return;
+    }
+
+    // --- 編集開始（インライン編集に切り替え）---
+    if (editBtn) {
+      const card = editBtn.closest(".message-card");
+      const id = editBtn.dataset.id;
+      const bodyEl = card.querySelector(".message-body");
+      const actions = card.querySelector(".message-actions");
+      if (!bodyEl || !actions) return;
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "edit-area";
+      textarea.maxLength = 200;
+      textarea.value = bodyEl.textContent;
+      bodyEl.replaceWith(textarea);
+
+      actions.innerHTML = `
+        <button type="button" class="msg-btn msg-save" data-id="${escapeHtml(String(id))}">保存</button>
+        <button type="button" class="msg-btn msg-cancel">キャンセル</button>`;
+      textarea.focus();
+      return;
+    }
+
+    // --- 編集保存 ---
+    if (saveBtn) {
+      const card = saveBtn.closest(".message-card");
+      const id = saveBtn.dataset.id;
+      const textarea = card.querySelector(".edit-area");
+      if (!textarea) return;
+
+      const newBody = textarea.value.trim();
+      if (!newBody) {
+        window.alert("メッセージを入力してください。");
+        return;
+      }
+      if (newBody.length > 200) {
+        window.alert("メッセージは200文字以内で入力してください。");
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存中...";
+      try {
+        const res = await fetch(`/api/messages/${encodeURIComponent(id)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: newBody }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadMessages();
+      } catch (err) {
+        window.alert("更新に失敗しました。権限を確認してください。");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "保存";
+      }
+      return;
+    }
+
+    // --- 編集キャンセル ---
+    if (cancelBtn) {
+      await loadMessages();
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   renderStats();
   renderMatches("match-list", leagueMatches);
   renderMatches("playoff-list", playoffMatches);
   setupFilters();
 
+  // 認証状態を先に取得（adminならメッセージに編集/削除ボタンを表示するため）
+  await loadAuth();
+
   // 掲示板
   populateMatchSelect();
   setupMessageForm();
+  setupAdminActions();
   loadMessages();
 });

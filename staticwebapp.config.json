@@ -8,5 +8,17 @@
   },
   "globalHeaders": {
     "Cache-Control": "no-cache"
+  },
+  "routes": [
+    {
+      "route": "/api/messages/*",
+      "methods": ["PUT", "DELETE"],
+      "allowedRoles": ["admin"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 403
+    }
   }
 }
