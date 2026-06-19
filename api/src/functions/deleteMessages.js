@@ -3,6 +3,10 @@
 const { query } = require('../shared/db');
 const { jsonResponse } = require('../shared/http');
 const { isAdmin } = require('../shared/auth');
+const { initTelemetry, trackEvent } = require('../shared/telemetry');
+
+// 関数モジュールの先頭で Application Insights を初期化する。
+initTelemetry();
 
 // DELETE /api/messages/{id}
 // adminロールのみ許可。messagesテーブルから該当レコードを削除する。
@@ -24,6 +28,9 @@ async function deleteMessage(request, context) {
     if (result.rowCount === 0) {
       return jsonResponse(404, { error: 'Message not found' });
     }
+
+    // 成功時にカスタムイベントを記録する。
+    trackEvent('MessageDeleted', { id: String(result.rows[0].id) });
 
     return jsonResponse(200, { deleted: true, id: result.rows[0].id });
   } catch (err) {

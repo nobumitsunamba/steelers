@@ -1,6 +1,7 @@
 'use strict';
 
 const { Pool } = require('pg');
+const { trackException } = require('./telemetry');
 
 // 接続プールはモジュールスコープでシングルトンとして保持し、
 // 関数呼び出し間で再利用する（コールドスタート以外では使い回される）。
@@ -22,7 +23,13 @@ function getPool() {
 }
 
 async function query(text, params) {
-  return getPool().query(text, params);
+  try {
+    return await getPool().query(text, params);
+  } catch (err) {
+    // DBクエリのエラーは Application Insights にトラッキングする。
+    trackException(err, { kind: 'db_query', query: text });
+    throw err;
+  }
 }
 
 module.exports = { getPool, query };
