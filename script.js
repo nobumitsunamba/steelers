@@ -153,6 +153,36 @@ const leagueMatches = [
     result: "win",
     venue: "豊田スタジアム",
   },
+  {
+    round: "第16節",
+    date: "2026.04.25",
+    opponent: "東京サントリーサンゴリアス",
+    homeAway: "H",
+    steelersScore: 49,
+    opponentScore: 28,
+    result: "win",
+    venue: "神戸総合運動公園ユニバー記念競技場",
+  },
+  {
+    round: "第17節",
+    date: "2026.05.02",
+    opponent: "三重ホンダヒート",
+    homeAway: "H",
+    steelersScore: 24,
+    opponentScore: 19,
+    result: "win",
+    venue: "東大阪市花園ラグビー場",
+  },
+  {
+    round: "第18節",
+    date: "2026.05.10",
+    opponent: "クボタスピアーズ船橋・東京ベイ",
+    homeAway: "A",
+    steelersScore: 24,
+    opponentScore: 19,
+    result: "win",
+    venue: "スピアーズえどりくフィールド（江戸川区陸上競技場）",
+  },
 ];
 
 // プレーオフトーナメント
