@@ -5,4 +5,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 COPY index.html style.css script.js /usr/share/nginx/html/
 
+# /api/ へのアクセスをAPI用Container Appへ転送するリバースプロキシ設定
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
